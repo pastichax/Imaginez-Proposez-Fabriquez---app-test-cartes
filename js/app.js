@@ -171,6 +171,7 @@ function attachPack(pack, onOpen) {
   const left = pack.querySelector('.half-left');
   const right = pack.querySelector('.half-right');
   const spark = pack.querySelector('.pack-spark');
+  const flap = pack.querySelector('.pack-top-flap');
 
   const applyCut = (p) => {
     line.style.opacity = p > 0 ? '0' : '1';
@@ -178,21 +179,20 @@ function attachPack(pack, onOpen) {
       left.style.opacity = '0';
       right.style.opacity = '0';
       spark.style.opacity = '0';
+      if (p <= 0) flap.style.transform = '';
       return;
     }
     const cutX = fromRight ? (1 - p) * 100 : p * 100;
+    const lift = -p * 11;
+    flap.style.transformOrigin = fromRight ? '0% 50%' : '100% 50%';
+    flap.style.transform = `translateY(${lift}px) rotate(${(fromRight ? -1 : 1) * p * 1.5}deg)`;
     left.style.opacity = '1';
     right.style.opacity = '1';
     spark.style.opacity = '1';
     left.style.clipPath = `inset(0 ${100 - cutX}% 0 0)`;
     right.style.clipPath = `inset(0 0 0 ${cutX}%)`;
-    if (fromRight) {
-      left.style.transform = 'translateY(0)';
-      right.style.transform = 'translateY(-3px)';
-    } else {
-      left.style.transform = 'translateY(-3px)';
-      right.style.transform = 'translateY(0)';
-    }
+    left.style.transform = fromRight ? 'translate(0, 0)' : `translate(${-p * 4}px, ${lift - 1}px)`;
+    right.style.transform = fromRight ? `translate(${p * 4}px, ${lift - 1}px)` : 'translate(0, 0)';
     spark.style.left = `calc(${cutX}% - 5px)`;
   };
 
@@ -225,8 +225,11 @@ function attachPack(pack, onOpen) {
         done = true;
         pid = null;
         applyCut(1);
-        pack.classList.add('pack-opened');
-        setTimeout(onOpen, 550);
+        flap.style.transition = 'transform .45s ease-in, opacity .45s ease-in';
+        flap.style.transform = `translate(${fromRight ? 95 : -95}px, -20px) rotate(${fromRight ? 15 : -15}deg)`;
+        flap.style.opacity = '0';
+        const info = { fromRight };
+        setTimeout(() => onOpen(info), 480);
       }
     }
   });
@@ -246,25 +249,75 @@ function attachPack(pack, onOpen) {
   pack.addEventListener('pointercancel', up);
 }
 
+/* forme « booster » : bords crantés haut et bas (clip-path) */
+function zigzagClipFull(teeth) {
+  const tw = 100 / teeth;
+  const pts = [];
+  for (let i = 0; i < teeth; i++) {
+    pts.push(`${(i * tw).toFixed(2)}% 2%`);
+    pts.push(`${((i + 0.5) * tw).toFixed(2)}% 0%`);
+  }
+  pts.push('100% 2%');
+  pts.push('100% 98%');
+  for (let i = teeth; i > 0; i--) {
+    pts.push(`${((i - 0.5) * tw).toFixed(2)}% 100%`);
+    pts.push(`${((i - 1) * tw).toFixed(2)}% 98%`);
+  }
+  return `polygon(${pts.join(',')})`;
+}
+
+function zigzagClipTop(teeth) {
+  const tw = 100 / teeth;
+  const pts = [];
+  for (let i = 0; i < teeth; i++) {
+    pts.push(`${(i * tw).toFixed(2)}% 36%`);
+    pts.push(`${((i + 0.5) * tw).toFixed(2)}% 0%`);
+  }
+  pts.push('100% 36%');
+  pts.push('100% 100%');
+  pts.push('0% 100%');
+  return `polygon(${pts.join(',')})`;
+}
+
+const BOOSTER_CLIP = zigzagClipFull(12);
+const BOOSTER_FLAP_CLIP = zigzagClipTop(12);
+
 function packEl(variant) {
   const p = el('div', 'pack' + (variant ? ' pack-' + variant : ''));
   p.innerHTML = `
     <div class="pack-body">
+      <div class="pack-band"></div>
       <img class="pack-logo" src="assets/logo.png" alt="Imaginez, Proposez, Fabriquez">
+      <div class="pack-band band-bottom"></div>
       <div class="pack-shine"></div>
     </div>
+    <div class="pack-top-flap"></div>
     <div class="pack-topline"></div>
     <div class="pack-topline half half-left"></div>
     <div class="pack-topline half half-right"></div>
     <div class="pack-spark"></div>`;
+  p.querySelector('.pack-body').style.clipPath = BOOSTER_CLIP;
+  p.querySelector('.pack-top-flap').style.clipPath = BOOSTER_FLAP_CLIP;
   return p;
+}
+
+/* paquet fantôme : quitte l'écran pendant que les cartes se disposent */
+function ghostPackEl(origin, screenRect) {
+  const g = el('div', 'pack ghost');
+  g.innerHTML = '<div class="pack-body"></div>';
+  g.querySelector('.pack-body').style.clipPath = BOOSTER_CLIP;
+  g.style.left = (origin.rect.left - screenRect.left) + 'px';
+  g.style.top = (origin.rect.top - screenRect.top) + 'px';
+  g.style.width = origin.rect.width + 'px';
+  g.style.setProperty('--exit-x', (origin.fromRight ? 40 : -40) + 'px');
+  return g;
 }
 
 /* jaillissement spectaculaire : sortie par le haut du paquet puis répartition */
 function burstTo(node, from, to, i, rot) {
   const t0 = `translate(${from.x}px, ${from.y}px) rotate(${((i * 41) % 50) - 25}deg) scale(0.25)`;
-  const scatterX = ((i * 31) % 90) - 45;
-  const up = 70 + ((i * 53) % 100);
+  const scatterX = ((i * 31) % 110) - 55;
+  const up = 100 + ((i * 53) % 140);
   const tB = `translate(${from.x + scatterX}px, ${Math.max(8, from.y - up)}px) rotate(${((i * 23) % 44) - 22}deg) scale(1)`;
   const t1 = `translate(${to.x}px, ${to.y}px) rotate(${rot}deg) scale(1)`;
   node.style.opacity = '0';
@@ -277,10 +330,10 @@ function burstTo(node, from, to, i, rot) {
   const anim = node.animate(
     [
       { transform: t0, opacity: 0 },
-      { transform: tB, opacity: 1, offset: 0.42 },
+      { transform: tB, opacity: 1, offset: 0.45 },
       { transform: t1, opacity: 1 },
     ],
-    { duration: 880 + i * 18, delay: i * 22, easing: 'cubic-bezier(.25,.7,.3,1.06)', fill: 'backwards' }
+    { duration: 950 + i * 20, delay: i * 24, easing: 'cubic-bezier(.25,.7,.3,1.06)', fill: 'backwards' }
   );
   anim.onfinish = () => {
     node.style.opacity = '1';
@@ -348,11 +401,13 @@ function renderStep1() {
   stage.appendChild(pack);
   s.appendChild(stage);
 
+  s.appendChild(el('div', 'pack-instruction', 'Découpez le long de la ligne pour ouvrir le paquet'));
+
   app.appendChild(s);
 
-  attachPack(pack, () => {
+  attachPack(pack, (info) => {
     const pr = pack.getBoundingClientRect();
-    renderStep2(true, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.15 });
+    renderStep2(true, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.1, rect: pr, fromRight: info.fromRight });
   });
 }
 
@@ -375,6 +430,12 @@ function renderStep2(flyOut, origin) {
   s.appendChild(footer);
 
   app.appendChild(s);
+
+  if (flyOut && origin && origin.rect) {
+    const ghost = ghostPackEl(origin, s.getBoundingClientRect());
+    s.appendChild(ghost);
+    setTimeout(() => ghost.remove(), 2000);
+  }
 
   const rect = table.getBoundingClientRect();
 
@@ -735,10 +796,12 @@ function renderExampleDetail(index) {
   stage.appendChild(pack);
   s.appendChild(stage);
 
+  s.appendChild(el('div', 'pack-instruction', 'Découpez le long de la ligne pour ouvrir le paquet'));
+
   app.appendChild(s);
-  attachPack(pack, () => {
+  attachPack(pack, (info) => {
     const pr = pack.getBoundingClientRect();
-    openExample(index, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.15 });
+    openExample(index, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.1, rect: pr, fromRight: info.fromRight });
   });
 }
 
@@ -762,6 +825,12 @@ function openExample(index, origin) {
   body.append(cardsArea, desc);
   s.appendChild(body);
   app.appendChild(s);
+
+  if (origin && origin.rect) {
+    const ghost = ghostPackEl(origin, s.getBoundingClientRect());
+    s.appendChild(ghost);
+    setTimeout(() => ghost.remove(), 2000);
+  }
 
   const defs = shuffle(ex.cards.map(cardByTitle).filter(Boolean));
   const rect = cardsArea.getBoundingClientRect();
