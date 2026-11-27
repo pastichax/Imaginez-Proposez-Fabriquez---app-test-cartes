@@ -23,10 +23,12 @@ L'application fonctionne entièrement hors ligne (aucun CDN, génération XLSX l
 ## Déroulé d'une session (5 étapes)
 
 1. **Ouvrir le paquet** — paquet plastique blanc 3D avec le logo ; manipulation libre au
-   doigt, ouverture en glissant vers le haut. Les cartes sortent du paquet.
-2. **Découvrir les cartes** — 29 cartes face visible : 11 « Quoi » (dos rouge),
-   8 « Où » (dos vert), 10 « Avec / Pour qui » (dos bleu). Déplacement au glisser,
-   zoom à deux doigts, tap pour agrandir.
+   doigt, puis découpe en glissant de droite à gauche en haut du paquet (une ligne de
+   coupe suit le doigt et scinde le paquet). Les cartes surgissent du paquet.
+2. **Découvrir les cartes** — les cartes se déposent en trois groupes selon leur couleur :
+   « Quoi » (dos rouge), « Où » (dos vert), « Avec / Pour qui » (dos bleu) ; l'ordre à
+   l'intérieur de chaque groupe est aléatoire. Déplacement au glisser, zoom à deux
+   doigts, tap pour agrandir.
 3. **Choisir sa main** — une pochette s'ouvre sur le côté ; on y dépose les cartes
    voulues (autant que souhaité) et on peut les en retirer. Bouton « Mon choix est fait ».
 4. **Décrire son idée** — les cartes choisies en vignettes en haut (tap pour consulter),
@@ -37,8 +39,8 @@ L'application fonctionne entièrement hors ligne (aucun CDN, génération XLSX l
 
 ## Exemples
 
-Le menu « Exemples » propose 3 paquets scellés. On en sélectionne un, on l'ouvre en
-glissant vers le haut : les cartes sortent dans un ordre aléatoire et se disposent à
+Le menu « Exemples » propose 3 paquets scellés. On en sélectionne un, on le découpe en
+glissant de droite à gauche en haut du paquet : les cartes sortent dans un ordre aléatoire et se disposent à
 l'écran, avec le titre du projet en haut et sa description dans un encadré à côté.
 Bouton « Retour » vers la sélection, puis vers le menu principal.
 

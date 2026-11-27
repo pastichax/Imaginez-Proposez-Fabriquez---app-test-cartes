@@ -203,6 +203,29 @@ html, body {
   z-index: 2;
   transition: transform .1s linear, opacity .1s linear;
 }
+.pack-seal-fallen {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 17%;
+  border-radius: 16px 16px 6px 6px;
+  background: repeating-linear-gradient(45deg, #f2f5f8, #f2f5f8 8px, #e3e9ef 8px, #e3e9ef 16px);
+  border: 1px solid #c2ccd6;
+  box-shadow: 0 6px 10px rgba(0, 30, 62, .18);
+  z-index: 1;
+  clip-path: inset(0 0 0 100%);
+  pointer-events: none;
+}
+.pack-cut {
+  position: absolute;
+  top: 1%;
+  height: 16%;
+  width: 0;
+  border-left: 2px dashed var(--rouge);
+  filter: drop-shadow(0 0 4px rgba(255, 90, 82, .9));
+  z-index: 3;
+  opacity: 0;
+  pointer-events: none;
+}
 .pack-hint {
   position: absolute;
   bottom: -34px; left: 0; right: 0;
@@ -300,6 +323,18 @@ html, body {
 .step23 { background: repeating-linear-gradient(-45deg, #f3ecdd, #f3ecdd 24px, #efe7d6 24px, #efe7d6 48px); }
 
 .cards-table { flex: 1; position: relative; overflow: hidden; touch-action: none; }
+
+.group-label {
+  position: absolute;
+  top: 0;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  opacity: .65;
+  pointer-events: none;
+}
 
 .card {
   border-radius: var(--card-radius);
