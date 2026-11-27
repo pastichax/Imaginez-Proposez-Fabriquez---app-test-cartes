@@ -249,11 +249,46 @@ function attachPack(pack, onOpen) {
   pack.addEventListener('pointercancel', up);
 }
 
+/* forme « booster » : bords crantés haut et bas (clip-path) */
+function zigzagClipFull(teeth) {
+  const tw = 100 / teeth;
+  const pts = [];
+  for (let i = 0; i < teeth; i++) {
+    pts.push(`${(i * tw).toFixed(2)}% 2%`);
+    pts.push(`${((i + 0.5) * tw).toFixed(2)}% 0%`);
+  }
+  pts.push('100% 2%');
+  pts.push('100% 98%');
+  for (let i = teeth; i > 0; i--) {
+    pts.push(`${((i - 0.5) * tw).toFixed(2)}% 100%`);
+    pts.push(`${((i - 1) * tw).toFixed(2)}% 98%`);
+  }
+  return `polygon(${pts.join(',')})`;
+}
+
+function zigzagClipTop(teeth) {
+  const tw = 100 / teeth;
+  const pts = [];
+  for (let i = 0; i < teeth; i++) {
+    pts.push(`${(i * tw).toFixed(2)}% 36%`);
+    pts.push(`${((i + 0.5) * tw).toFixed(2)}% 0%`);
+  }
+  pts.push('100% 36%');
+  pts.push('100% 100%');
+  pts.push('0% 100%');
+  return `polygon(${pts.join(',')})`;
+}
+
+const BOOSTER_CLIP = zigzagClipFull(12);
+const BOOSTER_FLAP_CLIP = zigzagClipTop(12);
+
 function packEl(variant) {
   const p = el('div', 'pack' + (variant ? ' pack-' + variant : ''));
   p.innerHTML = `
     <div class="pack-body">
+      <div class="pack-band"></div>
       <img class="pack-logo" src="assets/logo.png" alt="Imaginez, Proposez, Fabriquez">
+      <div class="pack-band band-bottom"></div>
       <div class="pack-shine"></div>
     </div>
     <div class="pack-top-flap"></div>
@@ -261,6 +296,8 @@ function packEl(variant) {
     <div class="pack-topline half half-left"></div>
     <div class="pack-topline half half-right"></div>
     <div class="pack-spark"></div>`;
+  p.querySelector('.pack-body').style.clipPath = BOOSTER_CLIP;
+  p.querySelector('.pack-top-flap').style.clipPath = BOOSTER_FLAP_CLIP;
   return p;
 }
 
@@ -268,6 +305,7 @@ function packEl(variant) {
 function ghostPackEl(origin, screenRect) {
   const g = el('div', 'pack ghost');
   g.innerHTML = '<div class="pack-body"></div>';
+  g.querySelector('.pack-body').style.clipPath = BOOSTER_CLIP;
   g.style.left = (origin.rect.left - screenRect.left) + 'px';
   g.style.top = (origin.rect.top - screenRect.top) + 'px';
   g.style.width = origin.rect.width + 'px';
@@ -362,6 +400,8 @@ function renderStep1() {
   const pack = packEl();
   stage.appendChild(pack);
   s.appendChild(stage);
+
+  s.appendChild(el('div', 'pack-instruction', 'Découpez le long de la ligne pour ouvrir le paquet'));
 
   app.appendChild(s);
 
@@ -755,6 +795,8 @@ function renderExampleDetail(index) {
   const pack = packEl('example');
   stage.appendChild(pack);
   s.appendChild(stage);
+
+  s.appendChild(el('div', 'pack-instruction', 'Découpez le long de la ligne pour ouvrir le paquet'));
 
   app.appendChild(s);
   attachPack(pack, (info) => {

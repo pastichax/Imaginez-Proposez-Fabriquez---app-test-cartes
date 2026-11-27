@@ -58,6 +58,10 @@ function ptr(el, type, x, y, id = 1) {
   ok(pack !== null, 'paquet scellé affiché');
   ok(d.querySelector('.pack-topline:not(.half)') !== null, 'ligne brillante de découpe');
   ok(d.querySelector('.pack-top-flap') !== null, 'partie supérieure au-dessus de la ligne');
+  ok((d.querySelector('.pack-body').style.clipPath || '').includes('polygon'), 'forme booster (bords crantés)');
+  ok(d.querySelector('.pack-band') !== null && d.querySelector('.pack-band.band-bottom') !== null, 'bandes du booster');
+  const instr = d.querySelector('.step1 .pack-instruction');
+  ok(instr !== null && instr.textContent === 'Découpez le long de la ligne pour ouvrir le paquet', 'consigne en bas de l\'écran d\'ouverture');
   ok(d.querySelector('.pack-seal') === null && d.querySelector('.pack-hint') === null, 'ni bande hachurée ni consigne sur le paquet');
 
   // manipulation sans ouverture
@@ -172,6 +176,8 @@ function ptr(el, type, x, y, id = 1) {
   [...d.querySelectorAll('.menu-buttons .btn')].find((b) => b.textContent.includes('Exemples')).click();
   d.querySelectorAll('.example-item .pack')[1].click();
   ok(d.querySelector('.example-detail') !== null, 'détail de l\'exemple 2');
+  const instrEx = d.querySelector('.example-detail .pack-instruction');
+  ok(instrEx !== null && instrEx.textContent === 'Découpez le long de la ligne pour ouvrir le paquet', 'consigne en bas de l\'écran exemple');
   const p2 = d.querySelector('.pack');
   ptr(p2, 'pointerdown', 500, 200);
   ptr(p2, 'pointermove', 400, 200);

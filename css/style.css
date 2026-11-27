@@ -165,18 +165,35 @@ html, body {
 .pack-body {
   position: absolute;
   inset: 0;
-  border-radius: 16px;
   background:
-    linear-gradient(135deg, rgba(255,255,255,.9), rgba(255,255,255,0) 45%),
-    linear-gradient(160deg, #ffffff 0%, #eef2f6 55%, #dbe3ea 100%);
-  border: 1px solid #cfd8e0;
-  box-shadow: inset 0 0 30px rgba(160, 180, 200, .35), inset -8px 0 14px rgba(140, 160, 180, .25);
+    linear-gradient(45deg, rgba(255, 90, 82, .16), rgba(255, 255, 255, 0) 34%, rgba(30, 90, 168, .16) 78%),
+    linear-gradient(120deg, #ccd6e0 0%, #ffffff 26%, #e7edf3 50%, #ffffff 74%, #c7d2dd 100%);
+  box-shadow: inset 0 0 26px rgba(160, 180, 200, .4), inset -8px 0 14px rgba(140, 160, 180, .25);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
 }
-.pack-logo { width: 82%; opacity: .95; }
+.pack-band {
+  position: absolute;
+  left: 0; right: 0; top: 11%;
+  height: 9%;
+  background: linear-gradient(180deg, #ff6f67, #ff5a52 55%, #e64b43);
+  box-shadow: 0 2px 6px rgba(0, 30, 62, .28);
+}
+.pack-band.band-bottom {
+  top: auto;
+  bottom: 8%;
+  height: 6%;
+  background: linear-gradient(180deg, #10335a, #001e3e);
+}
+.pack-logo {
+  position: absolute;
+  top: 24%; left: 11%;
+  width: 78%; height: 55%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(0, 30, 62, .18));
+}
 .pack-shine {
   position: absolute;
   top: -60%; left: -30%;
@@ -189,10 +206,10 @@ html, body {
   position: absolute;
   top: 0; left: 0; right: 0;
   height: 5.5%;
-  border-radius: 16px 16px 0 0;
-  background: linear-gradient(160deg, #ffffff 0%, #eef3f8 100%);
-  border-bottom: 1px solid rgba(160, 180, 200, .45);
-  box-shadow: 0 3px 6px rgba(0, 30, 62, .14);
+  background:
+    linear-gradient(45deg, rgba(255, 90, 82, .16), rgba(255, 255, 255, 0) 34%, rgba(30, 90, 168, .16) 78%),
+    linear-gradient(120deg, #ccd6e0 0%, #ffffff 26%, #e7edf3 50%, #ffffff 74%, #c7d2dd 100%);
+  box-shadow: 0 3px 6px rgba(0, 30, 62, .16);
   z-index: 2;
   pointer-events: none;
 }
@@ -582,3 +599,10 @@ html, body {
 
 /* écrans étapes 1 et exemples : centrage vertical du paquet */
 .step1 { background: radial-gradient(circle at 50% 30%, #fdf9f0, var(--papier)); }
+
+.pack-instruction {
+  text-align: center;
+  padding: 14px 20px 22px;
+  font-size: 18px;
+  color: #5a6b7a;
+}

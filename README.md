@@ -22,7 +22,8 @@ L'application fonctionne entièrement hors ligne (aucun CDN, génération XLSX l
 
 ## Déroulé d'une session (5 étapes)
 
-1. **Ouvrir le paquet** — paquet plastique blanc 3D avec le logo ; manipulation libre au
+1. **Ouvrir le paquet** — paquet « booster » 3D à bords crantés (foil, bandes, logo) ;
+   manipulation libre au
    doigt, puis découpe le long de la ligne brillante (dans les deux sens) : la partie
    découpée s'écarte progressivement, puis la partie supérieure s'envole et les cartes
    jaillissent vers le haut tandis que le paquet quitte l'écran.
@@ -40,8 +41,8 @@ L'application fonctionne entièrement hors ligne (aucun CDN, génération XLSX l
 
 ## Exemples
 
-Le menu « Exemples » propose 3 paquets scellés. On en sélectionne un, on le découpe en
-glissant de droite à gauche en haut du paquet : les cartes sortent dans un ordre aléatoire et se disposent à
+Le menu « Exemples » propose 3 paquets scellés. On en sélectionne un, on le découpe le
+long de la ligne brillante : les cartes sortent dans un ordre aléatoire et se disposent à
 l'écran, avec le titre du projet en haut et sa description dans un encadré à côté.
 Bouton « Retour » vers la sélection, puis vers le menu principal.
 
