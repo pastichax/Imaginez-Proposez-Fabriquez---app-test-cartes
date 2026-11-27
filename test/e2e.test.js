@@ -63,15 +63,23 @@ function ptr(el, type, x, y, id = 1) {
   ptr(pack, 'pointerup', 540, 300);
   ok(d.querySelector('.step1') !== null, 'paquet manipulé sans ouverture');
 
-  // swipe up → ouverture
-  ptr(pack, 'pointerdown', 500, 350);
-  ptr(pack, 'pointermove', 500, 330);
-  ptr(pack, 'pointermove', 500, 200);
-  ptr(pack, 'pointerup', 500, 200);
+  // découpe de droite à gauche en haut du paquet
+  ptr(pack, 'pointerdown', 500, 200);
+  ptr(pack, 'pointermove', 400, 200);
+  ptr(pack, 'pointermove', 300, 200);
+  ptr(pack, 'pointerup', 300, 200);
   await sleep(800);
   ok(d.querySelector('.step23') !== null, 'étape 2 : cartes révélées');
   ok(d.querySelectorAll('.cards-table .card').length === 29, '29 cartes sur la table');
   ok(d.querySelectorAll('.card-picto svg').length === 29, '29 pictogrammes');
+  ok(d.querySelectorAll('.group-label').length === 3, '3 libellés de groupes');
+  const padZ = 14, zwZ = (1000 - padZ * 4) / 3;
+  const inZone = (x, gi) => x >= padZ + gi * (zwZ + padZ) - 12 && x <= padZ + gi * (zwZ + padZ) + zwZ + 12;
+  const groupedOk = ['quoi', 'ou', 'qui'].every((tp, gi) =>
+    T.state.session.deck.filter((c) => c.def.type === tp).every((c) => inZone(c._x, gi)));
+  ok(groupedOk, 'cartes déposées en 3 groupes par couleur');
+  const orders = JSON.stringify(T.state.session.deck.map((c) => c.def.title));
+  ok(!orders.startsWith('["Jouer'), 'ordre aléatoire à l\'intérieur des groupes');
 
   // déplacer une carte
   const c0 = d.querySelectorAll('.cards-table .card')[0];
@@ -161,10 +169,10 @@ function ptr(el, type, x, y, id = 1) {
   d.querySelectorAll('.example-item .pack')[1].click();
   ok(d.querySelector('.example-detail') !== null, 'détail de l\'exemple 2');
   const p2 = d.querySelector('.pack');
-  ptr(p2, 'pointerdown', 500, 350);
-  ptr(p2, 'pointermove', 500, 330);
-  ptr(p2, 'pointermove', 500, 200);
-  ptr(p2, 'pointerup', 500, 200);
+  ptr(p2, 'pointerdown', 500, 200);
+  ptr(p2, 'pointermove', 400, 200);
+  ptr(p2, 'pointermove', 300, 200);
+  ptr(p2, 'pointerup', 300, 200);
   await sleep(2400);
   ok(d.querySelector('.example-open') !== null, 'exemple ouvert');
   ok(d.querySelector('.example-title').textContent.length > 5, 'titre du projet affiché');

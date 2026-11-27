@@ -163,17 +163,22 @@ function applyCardTransform(st) {
     `translate(${st._x}px, ${st._y}px) rotate(${st._rot}deg) scale(${st._scale})`;
 }
 
-/* ---------- gestes : paquet (manipuler + glisser vers le haut) ---------- */
+/* ---------- gestes : paquet (manipuler + découper de droite à gauche en haut) ---------- */
 
 function attachPack(pack, onOpen) {
-  let pid = null, sx = 0, sy = 0, opening = false, progress = 0, done = false;
+  let pid = null, sx = 0, sy = 0, cutting = false, canCut = false, progress = 0, done = false;
   const seal = pack.querySelector('.pack-seal');
+  const fallen = pack.querySelector('.pack-seal-fallen');
+  const cutLine = pack.querySelector('.pack-cut');
   const hint = pack.querySelector('.pack-hint');
 
-  const applyProgress = (p) => {
-    seal.style.transform = `translateY(${-p * 130}%)`;
-    seal.style.opacity = String(1 - p);
-    pack.style.setProperty('--open', String(p));
+  const applyCut = (p) => {
+    seal.style.clipPath = `inset(0 ${p * 100}% 0 0)`;
+    fallen.style.clipPath = `inset(0 0 0 ${(1 - p) * 100}%)`;
+    fallen.style.transform = `translate(${p * 12}px, ${p * 30}px) rotate(${p * 12}deg)`;
+    fallen.style.opacity = String(1 - p * 0.55);
+    cutLine.style.left = `calc(${(1 - p) * 100}% - 1px)`;
+    cutLine.style.opacity = p > 0 && p < 1 ? '1' : '0';
   };
 
   pack.addEventListener('pointerdown', (e) => {
@@ -181,6 +186,9 @@ function attachPack(pack, onOpen) {
     pid = e.pointerId;
     pack.setPointerCapture(pid);
     sx = e.clientX; sy = e.clientY;
+    const rect = pack.getBoundingClientRect();
+    canCut = e.clientY - rect.top < rect.height * 0.45;
+    cutting = false;
     pack.classList.remove('snap-back');
   });
 
@@ -188,16 +196,17 @@ function attachPack(pack, onOpen) {
     if (e.pointerId !== pid || done) return;
     const dx = e.clientX - sx;
     const dy = sy - e.clientY;
-    if (!opening && dy > 12) opening = true;
-    if (!opening) {
+    if (!cutting && canCut && dx < -8) cutting = true;
+    if (!cutting) {
       pack.style.transform =
         `perspective(900px) rotateY(${clamp(dx * 0.35, -32, 32)}deg) rotateX(${clamp(-dy * 0.3, -16, 16)}deg)`;
     } else {
-      progress = clamp((dy - 12) / (pack.offsetHeight * 1.05), 0, 1);
-      applyProgress(progress);
+      progress = clamp(-dx / (pack.offsetWidth * 1.1), 0, 1);
+      applyCut(progress);
       if (progress >= 1) {
         done = true;
         pid = null;
+        cutLine.style.opacity = '0';
         pack.classList.add('pack-opened');
         if (hint) hint.style.opacity = '0';
         setTimeout(onOpen, 650);
@@ -208,10 +217,10 @@ function attachPack(pack, onOpen) {
   const up = (e) => {
     if (e.pointerId !== pid) return;
     pid = null;
-    if (opening && !done) {
-      opening = false; progress = 0;
+    if (cutting && !done) {
+      cutting = false; progress = 0;
       pack.classList.add('snap-back');
-      applyProgress(0);
+      applyCut(0);
       pack.style.transform = '';
       setTimeout(() => pack.classList.remove('snap-back'), 350);
     }
@@ -227,8 +236,10 @@ function packEl(variant) {
       <img class="pack-logo" src="assets/logo.png" alt="Imaginez, Proposez, Fabriquez">
       <div class="pack-shine"></div>
     </div>
-    <div class="pack-seal"><span>▲ glisser vers le haut ▲</span></div>
-    <div class="pack-hint">Paquet scellé</div>`;
+    <div class="pack-seal-fallen"></div>
+    <div class="pack-seal"><span>✂ glissez de droite à gauche</span></div>
+    <div class="pack-cut"></div>
+    <div class="pack-hint">Paquet scellé — découpez en haut, de droite à gauche</div>`;
   return p;
 }
 
@@ -292,7 +303,7 @@ function renderStep1() {
   stage.appendChild(pack);
   s.appendChild(stage);
 
-  s.appendChild(el('div', 'pack-instruction', 'Manipulez le paquet du bout des doigts, puis <b>glissez vers le haut</b> pour l\'ouvrir.'));
+  s.appendChild(el('div', 'pack-instruction', 'Manipulez le paquet du bout des doigts, puis <b>glissez de droite à gauche en haut du paquet</b> pour le découper.'));
 
   app.appendChild(s);
 
@@ -320,50 +331,83 @@ function renderStep2(flyOut) {
   app.appendChild(s);
 
   const rect = table.getBoundingClientRect();
-  const n = sess.deck.length;
-  const cols = 8;
-  const rows = Math.ceil(n / cols);
-  const cellW = (rect.width - 40) / cols;
-  const cellH = (rect.height - 20) / rows;
-  const cardW = clamp(Math.min(cellW - 14, (cellH - 12) / 1.45), 60, 130);
+
+  /* trois groupes par couleur de dos, ordre aléatoire à l'intérieur */
+  const groupDefs = [
+    { type: 'quoi', label: 'Quoi' },
+    { type: 'ou', label: 'Où' },
+    { type: 'qui', label: 'Avec / Pour qui' },
+  ];
+  const pad = 14;
+  const zw = (rect.width - pad * 4) / 3;
+  const th = rect.height - 34;
+
+  const groups = groupDefs.map((g) => ({
+    ...g,
+    cards: shuffle(sess.deck.filter((c) => c.def.type === g.type)),
+  }));
+
+  function bestCardSize(nCards) {
+    let best = 55;
+    for (let c = 1; c <= nCards; c++) {
+      const r = Math.ceil(nCards / c);
+      const cw = Math.min(zw / c - 10, th / (1.45 * r) - 12);
+      if (cw > best) best = cw;
+    }
+    return best;
+  }
+  const cardW = clamp(Math.min(...groups.map((g) => bestCardSize(g.cards.length))), 55, 120);
   const cardH = cardW * 1.45;
 
-  sess.deck.forEach((card, i) => {
-    const col = i % cols, row = Math.floor(i / cols);
-    const jitterX = ((i * 37) % 17) - 8;
-    const jitterY = ((i * 53) % 13) - 6;
-    card._rot = (((i * 29) % 13) - 6);
-    card._scale = 1;
-    card._w = cardW; card._h = cardH;
-    const fx = 20 + col * cellW + cellW / 2 - cardW / 2 + jitterX;
-    const fy = 10 + row * cellH + cellH / 2 - cardH / 2 + jitterY;
+  groups.forEach((g, gi) => {
+    const zoneX = pad + gi * (zw + pad);
+    const label = el('div', 'group-label', g.label);
+    label.style.left = zoneX + 'px';
+    label.style.width = zw + 'px';
+    label.style.color = CARD_TYPES[g.type].backColor;
+    table.appendChild(label);
 
-    const elCard = cardFaceEl(card.def);
-    elCard.style.width = cardW + 'px';
-    elCard.style.height = cardH + 'px';
-    elCard.style.position = 'absolute';
-    elCard.style.left = '0';
-    elCard.style.top = '0';
-    elCard.style.touchAction = 'none';
-    table.appendChild(elCard);
-    card.el = elCard;
+    const nCards = g.cards.length;
+    const rowsFit = Math.max(1, Math.floor(th / (cardH + 12)));
+    const cols = Math.max(1, Math.ceil(nCards / rowsFit));
+    const gridW = cols * (cardW + 8) - 8;
+    const offsetX = zoneX + (zw - gridW) / 2;
 
-    card._x = fx; card._y = fy;
+    g.cards.forEach((card, i) => {
+      const col = i % cols, row = Math.floor(i / cols);
+      const jitterX = ((i * 37) % 13) - 6;
+      const jitterY = ((i * 53) % 11) - 5;
+      card._rot = ((i * 29) % 11) - 5;
+      card._scale = 1;
+      card._w = cardW; card._h = cardH;
+      card._x = offsetX + col * (cardW + 8) + jitterX;
+      card._y = 26 + row * (cardH + 12) + jitterY;
 
-    attachCardHandlers(card, elCard);
+      const elCard = cardFaceEl(card.def);
+      elCard.style.width = cardW + 'px';
+      elCard.style.height = cardH + 'px';
+      elCard.style.position = 'absolute';
+      elCard.style.left = '0';
+      elCard.style.top = '0';
+      elCard.style.touchAction = 'none';
+      table.appendChild(elCard);
+      card.el = elCard;
 
-    if (flyOut) {
-      elCard.style.transform = `translate(${rect.width / 2 - cardW / 2}px, ${rect.height / 2 - cardH / 2}px) rotate(0deg) scale(0.15)`;
-      elCard.style.opacity = '0';
-      elCard.style.transition = `transform .55s cubic-bezier(.2,.8,.3,1.1) ${i * 35}ms, opacity .3s ${i * 35}ms`;
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        elCard.style.opacity = '1';
+      attachCardHandlers(card, elCard);
+
+      if (flyOut) {
+        elCard.style.transform = `translate(${rect.width / 2 - cardW / 2}px, ${rect.height / 2 - cardH / 2}px) rotate(${((i * 47) % 60) - 30}deg) scale(0.15)`;
+        elCard.style.opacity = '0';
+        elCard.style.transition = `transform .6s cubic-bezier(.2,.8,.3,1.1) ${i * 28}ms, opacity .25s ${i * 28}ms`;
+        requestAnimationFrame(() => requestAnimationFrame(() => {
+          elCard.style.opacity = '1';
+          applyCardTransform(card);
+        }));
+        setTimeout(() => { elCard.style.transition = ''; }, 900 + nCards * 28);
+      } else {
         applyCardTransform(card);
-      }));
-      setTimeout(() => { elCard.style.transition = ''; }, 900 + n * 35);
-    } else {
-      applyCardTransform(card);
-    }
+      }
+    });
   });
 
   /* pochette (étape 3) */
@@ -411,7 +455,7 @@ function renderStep2(flyOut) {
     rebuildPocketStack();
     updateCount();
     card._scale = 1;
-    const free = findFreeSpot();
+    const free = findFreeSpot(card);
     card._x = free.x; card._y = free.y;
     mountCardOnTable(card);
     applyCardTransform(card);
@@ -456,9 +500,10 @@ function renderStep2(flyOut) {
     );
   }
 
-  function findFreeSpot() {
-    const r = table.getBoundingClientRect();
-    return { x: r.width / 2 - cardW / 2, y: r.height / 2 - cardH / 2 };
+  function findFreeSpot(card) {
+    const gi = groupDefs.findIndex((g) => g.type === card.def.type);
+    const zoneX = pad + Math.max(0, gi) * (zw + pad);
+    return { x: zoneX + zw / 2 - card._w / 2, y: th / 2 - card._h / 2 };
   }
 
   actionBtn.addEventListener('click', () => {
@@ -647,7 +692,7 @@ function renderExampleDetail(index) {
   const pack = packEl('example');
   stage.appendChild(pack);
   s.appendChild(stage);
-  s.appendChild(el('div', 'pack-instruction', 'Sélectionnez ce paquet puis <b>glissez vers le haut</b> pour découvrir le projet.'));
+  s.appendChild(el('div', 'pack-instruction', 'Sélectionnez ce paquet puis <b>glissez de droite à gauche en haut du paquet</b> pour découvrir le projet.'));
 
   app.appendChild(s);
   attachPack(pack, () => openExample(index));
