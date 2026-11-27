@@ -56,6 +56,8 @@ function ptr(el, type, x, y, id = 1) {
   ok(d.querySelector('.step1') !== null, 'étape 1 atteinte');
   const pack = d.querySelector('.pack');
   ok(pack !== null, 'paquet scellé affiché');
+  ok(d.querySelector('.pack-topline:not(.half)') !== null, 'ligne brillante de découpe');
+  ok(d.querySelector('.pack-seal') === null && d.querySelector('.pack-hint') === null, 'ni bande hachurée ni consigne sur le paquet');
 
   // manipulation sans ouverture
   ptr(pack, 'pointerdown', 500, 300);

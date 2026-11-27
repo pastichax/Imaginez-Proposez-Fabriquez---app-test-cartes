@@ -163,22 +163,37 @@ function applyCardTransform(st) {
     `translate(${st._x}px, ${st._y}px) rotate(${st._rot}deg) scale(${st._scale})`;
 }
 
-/* ---------- gestes : paquet (manipuler + découper de droite à gauche en haut) ---------- */
+/* ---------- gestes : paquet (manipuler + découper la ligne brillante, dans les deux sens) ---------- */
 
 function attachPack(pack, onOpen) {
-  let pid = null, sx = 0, sy = 0, cutting = false, canCut = false, progress = 0, done = false;
-  const seal = pack.querySelector('.pack-seal');
-  const fallen = pack.querySelector('.pack-seal-fallen');
-  const cutLine = pack.querySelector('.pack-cut');
-  const hint = pack.querySelector('.pack-hint');
+  let pid = null, sx = 0, sy = 0, cutting = false, canCut = false, progress = 0, done = false, fromRight = true;
+  const line = pack.querySelector('.pack-topline:not(.half)');
+  const left = pack.querySelector('.half-left');
+  const right = pack.querySelector('.half-right');
+  const spark = pack.querySelector('.pack-spark');
 
   const applyCut = (p) => {
-    seal.style.clipPath = `inset(0 ${p * 100}% 0 0)`;
-    fallen.style.clipPath = `inset(0 0 0 ${(1 - p) * 100}%)`;
-    fallen.style.transform = `translate(${p * 12}px, ${p * 30}px) rotate(${p * 12}deg)`;
-    fallen.style.opacity = String(1 - p * 0.55);
-    cutLine.style.left = `calc(${(1 - p) * 100}% - 1px)`;
-    cutLine.style.opacity = p > 0 && p < 1 ? '1' : '0';
+    line.style.opacity = p > 0 ? '0' : '1';
+    if (p <= 0 || p >= 1) {
+      left.style.opacity = '0';
+      right.style.opacity = '0';
+      spark.style.opacity = '0';
+      return;
+    }
+    const cutX = fromRight ? (1 - p) * 100 : p * 100;
+    left.style.opacity = '1';
+    right.style.opacity = '1';
+    spark.style.opacity = '1';
+    left.style.clipPath = `inset(0 ${100 - cutX}% 0 0)`;
+    right.style.clipPath = `inset(0 0 0 ${cutX}%)`;
+    if (fromRight) {
+      left.style.transform = 'translateY(0)';
+      right.style.transform = 'translateY(-3px)';
+    } else {
+      left.style.transform = 'translateY(-3px)';
+      right.style.transform = 'translateY(0)';
+    }
+    spark.style.left = `calc(${cutX}% - 5px)`;
   };
 
   pack.addEventListener('pointerdown', (e) => {
@@ -187,7 +202,7 @@ function attachPack(pack, onOpen) {
     pack.setPointerCapture(pid);
     sx = e.clientX; sy = e.clientY;
     const rect = pack.getBoundingClientRect();
-    canCut = e.clientY - rect.top < rect.height * 0.45;
+    canCut = e.clientY - rect.top < rect.height * 0.35;
     cutting = false;
     pack.classList.remove('snap-back');
   });
@@ -196,20 +211,22 @@ function attachPack(pack, onOpen) {
     if (e.pointerId !== pid || done) return;
     const dx = e.clientX - sx;
     const dy = sy - e.clientY;
-    if (!cutting && canCut && dx < -8) cutting = true;
+    if (!cutting && canCut && Math.abs(dx) > 8) {
+      cutting = true;
+      fromRight = dx < 0;
+    }
     if (!cutting) {
       pack.style.transform =
         `perspective(900px) rotateY(${clamp(dx * 0.35, -32, 32)}deg) rotateX(${clamp(-dy * 0.3, -16, 16)}deg)`;
     } else {
-      progress = clamp(-dx / (pack.offsetWidth * 1.1), 0, 1);
+      progress = clamp(Math.abs(dx) / (pack.offsetWidth * 1.15), 0, 1);
       applyCut(progress);
       if (progress >= 1) {
         done = true;
         pid = null;
-        cutLine.style.opacity = '0';
+        applyCut(1);
         pack.classList.add('pack-opened');
-        if (hint) hint.style.opacity = '0';
-        setTimeout(onOpen, 650);
+        setTimeout(onOpen, 550);
       }
     }
   });
@@ -236,11 +253,39 @@ function packEl(variant) {
       <img class="pack-logo" src="assets/logo.png" alt="Imaginez, Proposez, Fabriquez">
       <div class="pack-shine"></div>
     </div>
-    <div class="pack-seal-fallen"></div>
-    <div class="pack-seal"><span>✂ glissez de droite à gauche</span></div>
-    <div class="pack-cut"></div>
-    <div class="pack-hint">Paquet scellé — découpez en haut, de droite à gauche</div>`;
+    <div class="pack-topline"></div>
+    <div class="pack-topline half half-left"></div>
+    <div class="pack-topline half half-right"></div>
+    <div class="pack-spark"></div>`;
   return p;
+}
+
+/* jaillissement spectaculaire : sortie par le haut du paquet puis répartition */
+function burstTo(node, from, to, i, rot) {
+  const t0 = `translate(${from.x}px, ${from.y}px) rotate(${((i * 41) % 50) - 25}deg) scale(0.25)`;
+  const scatterX = ((i * 31) % 90) - 45;
+  const up = 70 + ((i * 53) % 100);
+  const tB = `translate(${from.x + scatterX}px, ${Math.max(8, from.y - up)}px) rotate(${((i * 23) % 44) - 22}deg) scale(1)`;
+  const t1 = `translate(${to.x}px, ${to.y}px) rotate(${rot}deg) scale(1)`;
+  node.style.opacity = '0';
+  node.style.transform = t0;
+  if (typeof node.animate !== 'function') {
+    node.style.opacity = '1';
+    node.style.transform = t1;
+    return;
+  }
+  const anim = node.animate(
+    [
+      { transform: t0, opacity: 0 },
+      { transform: tB, opacity: 1, offset: 0.42 },
+      { transform: t1, opacity: 1 },
+    ],
+    { duration: 880 + i * 18, delay: i * 22, easing: 'cubic-bezier(.25,.7,.3,1.06)', fill: 'backwards' }
+  );
+  anim.onfinish = () => {
+    node.style.opacity = '1';
+    node.style.transform = t1;
+  };
 }
 
 /* ============================================================
@@ -303,16 +348,17 @@ function renderStep1() {
   stage.appendChild(pack);
   s.appendChild(stage);
 
-  s.appendChild(el('div', 'pack-instruction', 'Manipulez le paquet du bout des doigts, puis <b>glissez de droite à gauche en haut du paquet</b> pour le découper.'));
-
   app.appendChild(s);
 
-  attachPack(pack, () => renderStep2(true));
+  attachPack(pack, () => {
+    const pr = pack.getBoundingClientRect();
+    renderStep2(true, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.15 });
+  });
 }
 
 /* ----- étapes 2 & 3 : table de cartes (+ pochette) ----- */
 
-function renderStep2(flyOut) {
+function renderStep2(flyOut, origin) {
   setStep(2);
   clearScreen();
   const sess = state.session;
@@ -396,14 +442,10 @@ function renderStep2(flyOut) {
       attachCardHandlers(card, elCard);
 
       if (flyOut) {
-        elCard.style.transform = `translate(${rect.width / 2 - cardW / 2}px, ${rect.height / 2 - cardH / 2}px) rotate(${((i * 47) % 60) - 30}deg) scale(0.15)`;
-        elCard.style.opacity = '0';
-        elCard.style.transition = `transform .6s cubic-bezier(.2,.8,.3,1.1) ${i * 28}ms, opacity .25s ${i * 28}ms`;
-        requestAnimationFrame(() => requestAnimationFrame(() => {
-          elCard.style.opacity = '1';
-          applyCardTransform(card);
-        }));
-        setTimeout(() => { elCard.style.transition = ''; }, 900 + nCards * 28);
+        const from = origin
+          ? { x: origin.x - rect.left - cardW / 2, y: origin.y - rect.top - cardH / 2 }
+          : { x: rect.width / 2 - cardW / 2, y: rect.height * 0.2 };
+        burstTo(elCard, from, { x: card._x, y: card._y }, i, card._rot);
       } else {
         applyCardTransform(card);
       }
@@ -692,13 +734,15 @@ function renderExampleDetail(index) {
   const pack = packEl('example');
   stage.appendChild(pack);
   s.appendChild(stage);
-  s.appendChild(el('div', 'pack-instruction', 'Sélectionnez ce paquet puis <b>glissez de droite à gauche en haut du paquet</b> pour découvrir le projet.'));
 
   app.appendChild(s);
-  attachPack(pack, () => openExample(index));
+  attachPack(pack, () => {
+    const pr = pack.getBoundingClientRect();
+    openExample(index, { x: pr.left + pr.width / 2, y: pr.top + pr.height * 0.15 });
+  });
 }
 
-function openExample(index) {
+function openExample(index, origin) {
   const ex = EXAMPLES[index];
   clearScreen();
   const s = el('div', 'screen example-open');
@@ -742,20 +786,12 @@ function openExample(index) {
     c.style.position = 'absolute';
     c.style.left = '0'; c.style.top = '0';
     c._x = fx; c._y = fy; c._rot = rot; c._scale = 1;
-    applyCardTransform(c);
-
-    c.style.transform = `translate(${rect.width / 2 - cardW / 2}px, ${rect.height / 2 - cardH / 2}px) rotate(0) scale(0.15)`;
-    c.style.opacity = '0';
-    c.style.transition = `transform .5s cubic-bezier(.2,.8,.3,1.1) ${i * 90}ms, opacity .3s ${i * 90}ms`;
     cardsArea.appendChild(c);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      c.style.opacity = '1';
-      applyCardTransform(c);
-    }));
-    setTimeout(() => {
-      c.style.transition = '';
-      attachCardGestures(c, c, () => showCardModal(def));
-    }, 600 + n * 90);
+    attachCardGestures(c, c, () => showCardModal(def));
+    const from = origin
+      ? { x: origin.x - rect.left - cardW / 2, y: origin.y - rect.top - cardH / 2 }
+      : { x: rect.width / 2 - cardW / 2, y: rect.height * 0.2 };
+    burstTo(c, from, { x: fx, y: fy }, i, rot);
   });
 }
 
