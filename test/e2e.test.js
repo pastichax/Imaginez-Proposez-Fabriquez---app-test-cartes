@@ -57,6 +57,7 @@ function ptr(el, type, x, y, id = 1) {
   const pack = d.querySelector('.pack');
   ok(pack !== null, 'paquet scellé affiché');
   ok(d.querySelector('.pack-topline:not(.half)') !== null, 'ligne brillante de découpe');
+  ok(d.querySelector('.pack-top-flap') !== null, 'partie supérieure au-dessus de la ligne');
   ok(d.querySelector('.pack-seal') === null && d.querySelector('.pack-hint') === null, 'ni bande hachurée ni consigne sur le paquet');
 
   // manipulation sans ouverture
@@ -72,6 +73,7 @@ function ptr(el, type, x, y, id = 1) {
   ptr(pack, 'pointerup', 300, 200);
   await sleep(800);
   ok(d.querySelector('.step23') !== null, 'étape 2 : cartes révélées');
+  ok(d.querySelector('.pack.ghost') !== null, 'paquet fantôme qui quitte l\'écran');
   ok(d.querySelectorAll('.cards-table .card').length === 29, '29 cartes sur la table');
   ok(d.querySelectorAll('.card-picto svg').length === 29, '29 pictogrammes');
   ok(d.querySelectorAll('.group-label').length === 3, '3 libellés de groupes');

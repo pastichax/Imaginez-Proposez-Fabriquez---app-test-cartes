@@ -23,8 +23,9 @@ L'application fonctionne entièrement hors ligne (aucun CDN, génération XLSX l
 ## Déroulé d'une session (5 étapes)
 
 1. **Ouvrir le paquet** — paquet plastique blanc 3D avec le logo ; manipulation libre au
-   doigt, puis découpe en glissant de droite à gauche en haut du paquet (une ligne de
-   coupe suit le doigt et scinde le paquet). Les cartes surgissent du paquet.
+   doigt, puis découpe le long de la ligne brillante (dans les deux sens) : la partie
+   découpée s'écarte progressivement, puis la partie supérieure s'envole et les cartes
+   jaillissent vers le haut tandis que le paquet quitte l'écran.
 2. **Découvrir les cartes** — les cartes se déposent en trois groupes selon leur couleur :
    « Quoi » (dos rouge), « Où » (dos vert), « Avec / Pour qui » (dos bleu) ; l'ordre à
    l'intérieur de chaque groupe est aléatoire. Déplacement au glisser, zoom à deux
